@@ -1,6 +1,9 @@
+console.log("JS LOADED");
 
 function showMessage(text, type) {
     const msg = document.getElementById("message");
+    if (!msg) return;
+
     msg.innerText = text;
     msg.className = "message " + type;
 }
@@ -15,27 +18,14 @@ function validatePassword(password) {
     return null;
 }
 
-function togglePassword() {
-    const pwd = document.getElementById("password");
-    const confirm = document.getElementById("confirmPassword");
-
-    const type = pwd.type === "password" ? "text" : "password";
-    pwd.type = type;
-    confirm.type = type;
-}
-
 function register() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
+    console.log("register clicked");
 
-    if (!username || !password || !confirmPassword) {
+    const username = document.getElementById("username")?.value.trim();
+    const password = document.getElementById("password")?.value;
+
+    if (!username || !password) {
         showMessage("Please fill all fields", "error");
-        return;
-    }
-
-    if (password !== confirmPassword) {
-        showMessage("Passwords do not match", "error");
         return;
     }
 
@@ -59,8 +49,10 @@ function register() {
 }
 
 function login() {
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
+    console.log("login clicked");
+
+    const username = document.getElementById("username")?.value.trim();
+    const password = document.getElementById("password")?.value;
 
     let users = JSON.parse(localStorage.getItem("users")) || {};
 
@@ -74,12 +66,10 @@ function login() {
         return;
     }
 
-    // เก็บ session
     localStorage.setItem("currentUser", username);
 
-    showMessage("Login success 🎉", "success");
+    showMessage("Login success ", "success");
 
-    // redirect
     setTimeout(() => {
         window.location.href = "home.html";
     }, 1000);
