@@ -62,9 +62,9 @@
 
   <input type="text" id="username" placeholder="Username">
   <input type="password" id="password" placeholder="Password">
+  <input type="password" id="confirmPassword" placeholder="Confirm Password">
 
-
-  <div>
+  <label><input type="checkbox" id="showPassword" onchange="togglePassword()"> Show Password</label>
     <button class="register-btn" onclick="register()">Register</button>
     <button class="login-btn" onclick="login()">Login</button>
   </div>
