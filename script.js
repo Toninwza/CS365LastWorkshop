@@ -49,4 +49,7 @@ function logout() {
     window.location.href = "index.html";
 }
 
-module.exports = { checkPassword };
+// module.exports = { checkPassword };
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { checkPassword };
+}
