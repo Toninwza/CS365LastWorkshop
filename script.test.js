@@ -1,5 +1,5 @@
 // นำเข้าฟังก์ชันจากไฟล์ของเพื่อน
-const { validatePassword, register, login } = require('./script');
+const { validatePassword, register, login } = require('./templates/script');
 
 // Mock localStorage
 const localStorageMock = (() => {
