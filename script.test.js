@@ -18,7 +18,7 @@ describe('Password Validation Tests', () => {
         expect(checkPassword('PasswordOnly')).toBe(false);
     });
 
-    // 3. ทดสอบกรณีพิเศษ (Edge Cases) - อันนี้แหละที่จะทำให้คุณดูเก่ง!
+    // 3. ทดสอบกรณีพิเศษ (Edge Cases) - กรณีที่อาจเกิดขึ้นได้แต่ไม่บ่อยนัก
     test('รหัสผ่านว่างเปล่า -> ไม่ควรผ่าน', () => {
         expect(checkPassword('')).toBe(false);
     });
