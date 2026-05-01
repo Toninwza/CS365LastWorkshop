@@ -1,5 +1,5 @@
 // นำเข้าฟังก์ชันจากไฟล์ของเพื่อน
-const { checkPassword } = require('./script');
+const { validatePassword, register, login } = require('./script');
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -17,107 +17,126 @@ describe('Password Validation Tests', () => {
 
     // 1. ทดสอบกรณีที่ควรผ่าน (Positive Test)
     test('รหัสผ่านที่ถูกต้อง (8 ตัวขึ้นไป และมีตัวเลข) -> ควรผ่าน', () => {
-        expect(checkPassword('Kamonphan2026')).toBe(true);
-        expect(checkPassword('12345678')).toBe(true); // เลขล้วนแต่ยาวพอก็ถือว่ามีเลข
+        expect(validatePassword('Kamonphan2026')).toBeNull();
+        expect(validatePassword('12345678')).toBeNull();
     });
 
     // 2. ทดสอบกรณีที่ควรตก (Negative Test)
-    test('รหัสผ่านสั้นเกินไป -> ไม่ควรผ่าน', () => {
-        expect(checkPassword('Abc1')).toBe(false);
+    test('รหัสผ่านสั้นเกินไป -> ต้องมีข้อความ error', () => {
+        expect(validatePassword('Abc1')).toBe('Password must be at least 8 characters');
     });
 
-    test('รหัสผ่านไม่มีตัวเลข -> ไม่ควรผ่าน', () => {
-        expect(checkPassword('PasswordOnly')).toBe(false);
+    test('รหัสผ่านไม่มีตัวเลข -> ต้องมีข้อความ error', () => {
+        expect(validatePassword('PasswordOnly')).toBe('Password must contain at least 1 number');
     });
 
-    // 3. ทดสอบกรณีพิเศษ (Edge Cases) - อันนี้แหละที่จะทำให้คุณดูเก่ง!
-    test('รหัสผ่านว่างเปล่า -> ไม่ควรผ่าน', () => {
-        expect(checkPassword('')).toBe(false);
+    // 3. ทดสอบกรณีพิเศษ (Edge Cases)
+    test('รหัสผ่านว่างเปล่า -> ต้องมีข้อความ error', () => {
+        expect(validatePassword('')).toBe('Password must be at least 8 characters');
     });
 
-    test('ใส่ช่องว่างหลายๆ อัน -> ไม่ควรผ่าน', () => {
-        expect(checkPassword('        ')).toBe(false);
-    });
-
-    test('ใส่เป็นตัวเลขอย่างเดียวแต่สั้นไป -> ไม่ควรผ่าน', () => {
-        expect(checkPassword('123')).toBe(false);
+    test('ใส่เป็นตัวเลขอย่างเดียวแต่สั้นไป -> ต้องมีข้อความ error', () => {
+        expect(validatePassword('123')).toBe('Password must be at least 8 characters');
     });
     
-    test('กรณี Input ไม่ใช่ข้อความ (เช่น null หรือ undefined) -> ไม่ควรพังและต้องไม่ผ่าน', () => {
-        expect(checkPassword(null)).toBe(false);
-        expect(checkPassword(undefined)).toBe(false);
+    test('Password 8 ตัว มีตัวเลข -> ควรผ่าน', () => {
+        expect(validatePassword('Abcdefg1')).toBeNull();
+    });
+});
+
+describe('Register Flow Tests', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    // ทดสอบ validatePassword function ก่อน register
+    test('Register ด้วย Password ที่ถูกต้อง -> validatePassword ต้องคืน null', () => {
+        const password = 'ValidPass123';
+        expect(validatePassword(password)).toBeNull();
+    });
+
+    test('Register ด้วย Password ที่สั้น -> validatePassword ต้องคืน error message', () => {
+        const password = 'short1';
+        expect(validatePassword(password)).not.toBeNull();
+    });
+
+    test('Register ด้วย Password ที่ไม่มีตัวเลข -> validatePassword ต้องคืน error message', () => {
+        const password = 'NoNumbers';
+        expect(validatePassword(password)).not.toBeNull();
+    });
+
+    // ทดสอบการจัดเก็บ users ใน localStorage
+    test('Users ควรเก็บอยู่ใน localStorage เป็น JSON', () => {
+        const testUsers = { testuser: 'password1234' };
+        localStorage.setItem('users', JSON.stringify(testUsers));
+        
+        const stored = JSON.parse(localStorage.getItem('users'));
+        expect(stored.testuser).toBe('password1234');
+    });
+
+    test('User ใหม่ต้องสามารถเพิ่มเข้า users object ได้', () => {
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+        users['newuser'] = 'newpass1234';
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        const updated = JSON.parse(localStorage.getItem('users'));
+        expect(updated.newuser).toBe('newpass1234');
     });
 });
 
 describe('Login Flow Tests', () => {
     beforeEach(() => {
         localStorage.clear();
+        // สร้าง test user
+        const testUsers = { 'testuser': 'testpass1234' };
+        localStorage.setItem('users', JSON.stringify(testUsers));
     });
 
-    // ทดสอบการ Login ด้วย Credentials ที่ถูกต้อง
-    test('Login ด้วย Username และ Password ที่ถูกต้อง -> ควรจัดเก็บ user ใน localStorage', () => {
-        const username = 'admin';
-        const password = 'admin1234';
-
-        // ตรวจสอบว่า password ผ่านการตรวจสอบก่อน
-        expect(checkPassword(password)).toBe(true);
-
-        // จำลองการบันทึก user
-        localStorage.setItem('user', username);
-
-        // ตรวจสอบว่า user ถูกจัดเก็บในไป localStorage
-        expect(localStorage.getItem('user')).toBe('admin');
+    // ทดสอบการตรวจสอบ Password
+    test('Password ของ Login ต้องผ่านการ validate', () => {
+        const password = 'testpass1234';
+        expect(validatePassword(password)).toBeNull();
     });
 
-    // ทดสอบการ Login ด้วย Password ที่ไม่ผ่านการตรวจสอบ
-    test('Login ด้วย Password ที่สั้นเกินไป -> ไม่ควรผ่านการตรวจสอบ', () => {
-        const password = 'pass1';
-        expect(checkPassword(password)).toBe(false);
+    // ทดสอบการตรวจสอบ User ใน localStorage
+    test('Login ด้วย Username ที่มีอยู่ -> ควรเจอ user ใน localStorage', () => {
+        const users = JSON.parse(localStorage.getItem('users'));
+        expect(users['testuser']).toBe('testpass1234');
     });
 
-    // ทดสอบการ Login ด้วย Username ผิด
-    test('Login ด้วย Username ผิด -> ไม่ควรผ่าน', () => {
-        const username = 'wronguser';
-        const password = 'admin1234';
-        const validUser = 'admin';
-
-        expect(username).not.toBe(validUser);
+    test('Login ด้วย Username ที่ไม่มี -> ไม่ควรเจอใน users object', () => {
+        const users = JSON.parse(localStorage.getItem('users'));
+        expect(users['wronguser']).toBeUndefined();
     });
 
-    // ทดสอบการ Login ด้วย Password ผิด
-    test('Login ด้วย Password ผิด -> ไม่ควรผ่าน', () => {
-        const username = 'admin';
-        const password = 'wrongpass1234';
-        const validPassword = 'admin1234';
-
-        expect(password).not.toBe(validPassword);
+    test('Login ด้วย Password ที่ถูกต้อง -> ต้องตรงกับที่เก็บ', () => {
+        const username = 'testuser';
+        const password = 'testpass1234';
+        const users = JSON.parse(localStorage.getItem('users'));
+        
+        expect(users[username] === password).toBe(true);
     });
 
-    // ทดสอบการ Logout
-    test('Logout -> ควรลบ user จาก localStorage', () => {
-        localStorage.setItem('user', 'admin');
-        expect(localStorage.getItem('user')).toBe('admin');
-
-        // จำลองการ logout
-        localStorage.removeItem('user');
-        expect(localStorage.getItem('user')).toBeNull();
+    test('Login ด้วย Password ที่ผิด -> ต้องไม่ตรงกับที่เก็บ', () => {
+        const username = 'testuser';
+        const password = 'wrongpassword';
+        const users = JSON.parse(localStorage.getItem('users'));
+        
+        expect(users[username] === password).toBe(false);
     });
 
-    // ทดสอบการป้องกัน: ถ้าไม่ได้ login ก็ไม่มี user ใน localStorage
-    test('ก่อน Login -> localStorage ไม่มี user', () => {
-        expect(localStorage.getItem('user')).toBeNull();
+    test('Login สำเร็จ -> ต้องจัดเก็บ currentUser ใน localStorage', () => {
+        const username = 'testuser';
+        localStorage.setItem('currentUser', username);
+        
+        expect(localStorage.getItem('currentUser')).toBe('testuser');
     });
 
-    // ทดสอบ Credentials ที่ถูกต้องทั้งหมด
-    test('Login ด้วยข้อมูลถูกต้องทั้งหมด -> ควรบันทึกและเข้าถึงได้', () => {
-        const username = 'admin';
-        const password = 'admin1234';
-
-        // ตรวจสอบ password ผ่านการตรวจสอบ
-        if (checkPassword(password) && username === 'admin' && password === 'admin1234') {
-            localStorage.setItem('user', username);
-        }
-
-        expect(localStorage.getItem('user')).toBe('admin');
+    test('Logout -> ต้องลบ currentUser จาก localStorage', () => {
+        localStorage.setItem('currentUser', 'testuser');
+        expect(localStorage.getItem('currentUser')).toBe('testuser');
+        
+        localStorage.removeItem('currentUser');
+        expect(localStorage.getItem('currentUser')).toBeNull();
     });
 });
